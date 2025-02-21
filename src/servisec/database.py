@@ -2,9 +2,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from contextlib import contextmanager
+from models.base import Base
 
-
-Base = declarative_base()
 
 class DatabaseService:
     '''Сервис для работы с БД'''
