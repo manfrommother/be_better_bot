@@ -1,127 +1,116 @@
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
+from aiogram.types import Message
+from aiogram.utils.callback_answer import CallbackAnswerMiddleware
+from typing import Dict, Any, Callable, Awaitable
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from datetime import datetime, time
+
+from handlers.navigation import navigation_router
+from handlers.expenses import expenses_router
+from handlers.workout import workout_router
+from handlers.sleep_weight import sleep_weight_router
+from handlers.goals import goals_router
 
 from services.database import DatabaseService
-from services.analytics import AnalyticsService
+from services.expenses import ExpensesService
+from services.sleep_weight import SleepWeightService
 from services.goals import GoalService
-from handlers.goals import goals_router
-from handlers.expenses import expenses_router
-import logging
+from services.analytics import AnalyticsService
+from services.workout import ExerciseService
 
+class ServicesMiddleware:
+   """Middleware для внедрения сервисов в хендлеры"""
+   def __init__(self, services: dict):
+       self.services = services
+
+   async def __call__(
+       self,
+       handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
+       event: Message,
+       data: Dict[str, Any]
+   ) -> Any:
+       # Добавляем сервисы в data, которая будет передана в хендлеры
+       data.update(self.services)
+       return await handler(event, data)
 
 class FinanceTrackerBot:
-    '''Основной класс бота'''
-    def __init__(self, token: str, db_url: str):
-        self.bot = Bot(token=token)
-        self.storage = RedisStorage.from_url('redis://localhost:6379/0')
-        self.dp = Dispatcher(storage=self.storage)
+   """Основной класс бота"""
+   def __init__(self, token: str, db_url: str, redis_url: str):
+       # Инициализация бота и диспетчера
+       self.bot = Bot(token=token)
+       self.storage = RedisStorage.from_url(redis_url)
+       self.dp = Dispatcher(storage=self.storage)
+       
+       # Инициализация базы данных
+       self.db = DatabaseService(db_url)
+       self.db.create_tables()
+       
+       # Инициализация сервисов
+       self.services = {
+           'db_service': self.db,
+           'expenses_service': ExpensesService(self.db),
+           'sleep_weight_service': SleepWeightService(self.db),
+           'goals_service': GoalService(self.db),
+           'analytics_service': AnalyticsService(self.db),
+           'workout_service': ExerciseService(self.db)
+       }
+       
+       # Настройка планировщика
+       self.scheduler = AsyncIOScheduler()
+       
+       # Инициализация middleware
+       self._setup_middleware()
+       
+       # Регистрация роутеров
+       self._setup_routers()
 
-        # Инициализация сервисов
-        self.db = DatabaseService(db_url)
-        self.analytics = AnalyticsService(self.db)
-        self.goals = GoalService(self.db)
+   def _setup_middleware(self):
+       """Настройка middleware"""
+       # Middleware для сервисов
+       self.dp.message.middleware(ServicesMiddleware(self.services))
+       self.dp.callback_query.middleware(ServicesMiddleware(self.services))
+       
+       # Middleware для автоматического ответа на callback_query
+       self.dp.callback_query.middleware(CallbackAnswerMiddleware())
 
-        #Инициализация планировщика
-        self.scheduler = AsyncIOScheduler()
+   def _setup_routers(self):
+       """Регистрация всех роутеров"""
+       # Основные роутеры
+       self.dp.include_router(navigation_router)
+       self.dp.include_router(expenses_router)
+       self.dp.include_router(workout_router)
+       self.dp.include_router(sleep_weight_router)
+       self.dp.include_router(goals_router)
 
-        #Настройка логирования
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
-        self.logger = logging.getLogger(__name__)
+   async def _setup_scheduler(self):
+       """Настройка планировщика задач"""
+       # Еженедельный отчет по субботам в 10:00
+       self.scheduler.add_job(
+           self._send_weekly_report,
+           trigger='cron',
+           day_of_week='sat',
+           hour=10,
+           minute=0
+       )
+       
+       # Ежедневная проверка просроченных целей
+       self.scheduler.add_job(
+           self.services['goals_service'].check_overdue_goals,
+           trigger='cron',
+           hour=0,
+           minute=0
+       )
+       
+       self.scheduler.start()
 
-    async def setup(self):
-        """Настройка бота и подключение обработчиков"""
-        # Регистрация роутеров
-        self.dp.include_router(goals_router)
-        self.dp.include_router(expenses_router)
-        self.dp.include_router(workout_router)
-        self.dp.include_router(sleep_weight_router)
-        
-        # Настройка планировщика задач
-        self._setup_scheduler()
-        
-        # Создание таблиц в БД, если они не существуют
-        self.db.create_tables()
-        
-        self.logger.info("Бот успешно настроен и готов к работе")
-
-    def _setup_scheduler(self):
-        """Настройка планировщика задач"""
-        # Еженедельный отчет по субботам в 10:00
-        self.scheduler.add_job(
-            self._send_weekly_report,
-            trigger='cron',
-            day_of_week='sat',
-            hour=10,
-            minute=0
-        )
-        
-        # Ежедневная проверка просроченных целей
-        self.scheduler.add_job(
-            self.goals.check_overdue_goals,
-            trigger='cron',
-            hour=0,
-            minute=0
-        )
-        
-        self.scheduler.start()
-
-    async def _send_weekly_report(self):
-        """Отправка еженедельного отчета"""
-        users = await self._get_active_users()
-        for user_id in users:
-            try:
-                report = await self._generate_weekly_report(user_id)
-                await self.bot.send_message(user_id, report)
-                await self.analytics.collect_user_activity(user_id, "weekly_report_sent")
-            except Exception as e:
-                self.logger.error(f"Ошибка при отправке отчета пользователю {user_id}: {e}")
-
-    async def _generate_weekly_report(self, user_id: int) -> str:
-        """Генерация еженедельного отчета для пользователя"""
-        # Получение данных за неделю
-        sleep_stats = await self._get_sleep_stats(user_id)
-        weight_stats = await self._get_weight_stats(user_id)
-        finance_stats = await self._get_finance_stats(user_id)
-        goals_progress = await self._get_goals_progress(user_id)
-        
-        # Формирование отчета
-        report = "📊 Ваш еженедельный отчет:\n\n"
-        
-        # Добавление информации о сне
-        report += f"😴 Сон:\n"
-        report += f"Среднее время сна: {sleep_stats['average_duration']:.1f} часов\n\n"
-        
-        # Добавление информации о весе
-        if weight_stats['has_records']:
-            report += f"⚖️ Вес:\n"
-            report += f"Начало недели: {weight_stats['start_weight']} кг\n"
-            report += f"Конец недели: {weight_stats['end_weight']} кг\n"
-            report += f"Изменение: {weight_stats['change']:+.1f} кг\n\n"
-        
-        # Добавление финансовой информации
-        report += f"💰 Финансы:\n"
-        report += f"Доходы: {finance_stats['income']:,.2f} ₽\n"
-        report += f"Расходы: {finance_stats['expenses']:,.2f} ₽\n"
-        report += f"Баланс: {finance_stats['balance']:+,.2f} ₽\n\n"
-        
-        # Добавление информации о целях
-        if goals_progress:
-            report += "🎯 Прогресс по целям:\n"
-            for goal in goals_progress:
-                progress = (goal.current_value - goal.start_value) / (goal.target_value - goal.start_value) * 100
-                report += f"{goal.title}: {progress:.1f}%\n"
-        
-        return report
-
-    async def run(self):
-        """Запуск бота"""
-        await self.setup()
-        try:
-            await self.dp.start_polling(self.bot)
-        finally:
-            await self.bot.session.close()
+   async def start(self):
+       """Запуск бота"""
+       try:
+           # Настройка и запуск планировщика
+           await self._setup_scheduler()
+           
+           # Запуск бота
+           await self.dp.start_polling(self.bot)
+       finally:
+           await self.storage.close()
+           await self.bot.session.close()
