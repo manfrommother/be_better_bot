@@ -3,11 +3,11 @@ from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from datetime import datetime, timedelta
 
-from utils.keyboards import KeyboardFactory
-from services.expenses import ExpensesService
-from services.sleep_weight import SleepWeightService
-from services.goals import GoalService
-from services.analytics import AnalyticsService, ActivityType
+from src.utils.keyboards import KeyboardFactory
+from src.services.expenses import ExpensesService
+from src.services.sleep_weight import SleepWeightService
+from src.services.goals import GoalService
+from src.services.analytics import AnalyticsService, ActivityType
 
 navigation_router = Router()
 

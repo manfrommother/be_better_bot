@@ -2,7 +2,7 @@ from decimal import Decimal
 from sqlalchemy import Transaction
 import math
 
-from models.savings import RoundingStep, UserSettings, SavingsAccount
+from src.models.savings import RoundingStep, UserSettings, SavingsAccount
 
 
 class ExpensesService:

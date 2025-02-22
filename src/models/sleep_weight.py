@@ -1,5 +1,5 @@
 from sqlalchemy import Column, DateTime, Integer, Numeric
-from base import BaseModel
+from src.models.base import BaseModel
 
 class SleepRecord(BaseModel):
     '''Модель записи сна'''

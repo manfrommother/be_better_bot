@@ -1,6 +1,6 @@
 from decimal import Decimal
 from sqlalchemy import Column, Integer, String, Numeric, ForeignKey, Enum
-from base import BaseModel
+from src.models.base import BaseModel
 import enum
 
 

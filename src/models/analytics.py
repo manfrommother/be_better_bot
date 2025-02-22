@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Enum as SQLEnum
 from enum import Enum
 from datetime import datetime
-from .base import BaseModel
+from src.models.base import BaseModel
 import json
 
 class ActivityType(Enum):

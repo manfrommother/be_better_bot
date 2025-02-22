@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, DateTime, String, Numeric
-from base import BaseModel
+from src.models.base import BaseModel
 
 
 class Exercise(BaseModel):

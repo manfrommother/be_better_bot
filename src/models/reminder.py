@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, DateTime, Boolean, Integer
-from base import BaseModel
+from src.models.base import BaseModel
 
 
 class Reminder(BaseModel):

@@ -5,7 +5,7 @@ from aiogram.utils.callback_answer import CallbackAnswerMiddleware
 from typing import Dict, Any, Callable, Awaitable
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from handlers.navigation import navigation_router
+from src.handlers.navigation import navigation_router
 from handlers.expenses import expenses_router
 from handlers.workout import workout_router
 from handlers.sleep_weight import sleep_weight_router

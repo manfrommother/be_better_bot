@@ -2,9 +2,9 @@ from datetime import timedelta
 
 import datetime
 
-from models.sleep_weight import WeightRecord
-from models.goal import GoalStatus, Goal, GoalType
-from models.sleep_weight import SleepRecord
+from src.models.sleep_weight import WeightRecord
+from src.models.goal import GoalStatus, Goal, GoalType
+from src.models.sleep_weight import SleepRecord
 
 
 

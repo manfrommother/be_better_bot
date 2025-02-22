@@ -1,5 +1,5 @@
 from decimal import Decimal
-from models.base import BaseModel
+from src.models.base import BaseModel
 from sqlalchemy import Column, Integer, Numeric, Enum, Boolean
 import enum
 
