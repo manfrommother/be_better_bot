@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 from sqlalchemy import func, Transaction
-from models.analytics import UserActivity
-from models.workout import Exercise
-from models.sleep_weight import SleepRecord
-from models.goal import Goal, GoalStatus
+
+from src.models.analytics import UserActivity
+from src.models.workout import Exercise
+from src.models.sleep_weight import SleepRecord
+from src.models.goal import Goal, GoalStatus
 
 
 class AnalyticsService:

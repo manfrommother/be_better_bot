@@ -1,4 +1,4 @@
-from models.goal import Goal, GoalType, GoalStatus
+from src.models.goal import Goal, GoalType, GoalStatus
 from datetime import datetime
 from typing import List
 

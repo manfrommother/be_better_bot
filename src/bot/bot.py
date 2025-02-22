@@ -6,17 +6,17 @@ from typing import Dict, Any, Callable, Awaitable
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from src.handlers.navigation import navigation_router
-from handlers.expenses import expenses_router
-from handlers.workout import workout_router
-from handlers.sleep_weight import sleep_weight_router
-from handlers.goals import goals_router
+from src.handlers.expenses import expenses_router
+from src.handlers.workout import workout_router
+from src.handlers.sleep_weight import sleep_weight_router
+from src.handlers.goals import goals_router
 
-from services.database import DatabaseService
-from services.expenses import ExpensesService
-from services.sleep_weight import SleepWeightService
-from services.goals import GoalService
-from services.analytics import AnalyticsService
-from services.workout import ExerciseService
+from src.services.database import DatabaseService
+from src.services.expenses import ExpensesService
+from src.services.sleep_weight import SleepWeightService
+from src.services.goals import GoalService
+from src.services.analytics import AnalyticsService
+from src.services.workout import ExerciseService
 
 class ServicesMiddleware:
    """Middleware для внедрения сервисов в хендлеры"""

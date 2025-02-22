@@ -5,8 +5,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from datetime import datetime
 
-from models.workout import Exercise
-from services.analytics import ActivityType
+from src.models.workout import Exercise
+from src.models.analytics import ActivityType
 
 workout_router = Router()
 

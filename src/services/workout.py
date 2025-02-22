@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from sqlalchemy import func
-from models.workout import Exercise
 from sqlalchemy import distinct
+
+from src.models.workout import Exercise
 
 
 class ExerciseService:

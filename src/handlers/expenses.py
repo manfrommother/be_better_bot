@@ -7,10 +7,11 @@ from aiogram.fsm.state import State, StatesGroup
 from datetime import datetime
 from decimal import Decimal
 
-from models.expenses import CategoryType
-from models.savings import RoundingStep
-from services.expenses import ExpensesService
-from services.analytics import AnalyticsService, ActivityType
+from src.models.expenses import CategoryType
+from src.models.savings import RoundingStep
+from src.services.expenses import ExpensesService
+from src.services.analytics import AnalyticsService
+from src.models.analytics import ActivityType
 
 
 expenses_router = Router()

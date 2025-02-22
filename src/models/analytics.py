@@ -27,4 +27,4 @@ class UserActivity(BaseModel):
     user_id = Column(Integer, nullable=False, index=True)
     action = Column(SQLEnum(ActivityType), nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
-    metadata = Column(String(500))  # JSON с дополнительной информацией
+    additional_data = Column(String(500))

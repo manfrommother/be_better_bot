@@ -7,7 +7,8 @@ from src.utils.keyboards import KeyboardFactory
 from src.services.expenses import ExpensesService
 from src.services.sleep_weight import SleepWeightService
 from src.services.goals import GoalService
-from src.services.analytics import AnalyticsService, ActivityType
+from src.services.analytics import AnalyticsService
+from src.models.analytics import ActivityType
 
 navigation_router = Router()
 
