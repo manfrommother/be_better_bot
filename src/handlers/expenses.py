@@ -7,7 +7,7 @@ from aiogram.fsm.state import State, StatesGroup
 from datetime import datetime
 from decimal import Decimal
 
-from src.models.expenses import CategoryType
+from src.models.transaction import CategoryType
 from src.models.savings import RoundingStep
 from src.services.expenses import ExpensesService
 from src.services.analytics import AnalyticsService

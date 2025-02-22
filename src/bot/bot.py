@@ -4,6 +4,8 @@ from aiogram.types import Message
 from aiogram.utils.callback_answer import CallbackAnswerMiddleware
 from typing import Dict, Any, Callable, Awaitable
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from datetime import datetime, timedelta
+from sqlalchemy import distinct
 
 from src.handlers.navigation import navigation_router
 from src.handlers.expenses import expenses_router
@@ -17,6 +19,9 @@ from src.services.sleep_weight import SleepWeightService
 from src.services.goals import GoalService
 from src.services.analytics import AnalyticsService
 from src.services.workout import ExerciseService
+
+from src.models.analytics import ActivityType
+from src.models.transaction import Transaction
 
 class ServicesMiddleware:
    """Middleware для внедрения сервисов в хендлеры"""
@@ -63,6 +68,49 @@ class FinanceTrackerBot:
        
        # Регистрация роутеров
        self._setup_routers()
+
+   async def _send_weekly_report(self):
+       """Отправка еженедельного отчета"""
+       try:
+            # Получаем всех активных пользователей за последнюю неделю
+            with self.db.get_session() as session:
+                active_users = session.query(
+                    distinct(Transaction.user_id)
+                ).filter(
+                    Transaction.created_at >= datetime.utcnow() - timedelta(days=7)
+                ).all()
+                
+                active_user_ids = [user[0] for user in active_users]  # Распаковываем результат запроса
+
+            for user_id in active_user_ids:
+                try:
+                    # Собираем статистику
+                    stats = await self._get_user_statistics(
+                        user_id,
+                        self.expenses_service,
+                        self.sleep_weight_service,
+                        self.goals_service
+                    )
+                    
+                    # Отправляем отчет
+                    await self.bot.send_message(
+                        chat_id=user_id,
+                        text=stats
+                    )
+                    
+                    # Логируем успешную отправку
+                    await self.analytics_service.log_activity(
+                        user_id=user_id,
+                        action=ActivityType.REPORT_SENT
+                    )
+                    
+                except Exception as user_error:
+                    self.logger.error(
+                        f"Ошибка при отправке отчета пользователю {user_id}: {user_error}"
+                    )
+                    
+       except Exception as e:
+            self.logger.error(f"Ошибка при отправке еженедельных отчетов: {e}")
 
    def _setup_middleware(self):
        """Настройка middleware"""
